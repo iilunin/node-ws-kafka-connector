@@ -1,0 +1,4 @@
+{
+  "KAFKA_TOPIC": "example_topic",
+  "MBR_LIST": "localhost:9092"
+}

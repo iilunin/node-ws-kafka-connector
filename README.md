@@ -1,1 +1,1 @@
-# node-ws-kafka-connector
+# Web socket connector to kafka

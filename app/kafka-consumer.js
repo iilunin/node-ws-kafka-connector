@@ -23,7 +23,7 @@ consumer.on('ready', function() {
                 `   partition: ${data.partition}\n` +
                 `   offset: ${data.offset}\n` +
                 `   payload: ${data.value.toString()}\n`);
-  });
+});
 
 function exitHandler(options, err) {
   // if (options.cleanup) console.log('clean');

@@ -8,66 +8,126 @@ const Msg   = require('./msg');
 // **************
 const wss = new WebSocket.Server({ port: process.env.WSS_PORT || cfg.WSS_PORT });
 
-const producer = new kafka.Producer({
-    'metadata.broker.list': cfg.MBR_LIST,
-    'queue.buffering.max.messages': 1000000,
-    'queue.buffering.max.ms': 20000,
-    'dr_cb': true,
-    'client.id': 'my-client'
-});
+function initProducer(ws){
+  ws.producer = new kafka.Producer({
+      'metadata.broker.list': cfg.MBR_LIST,
+      'queue.buffering.max.messages': 1000000,
+      'queue.buffering.max.ms': 5000,
+      'batch.num.messages': 100,
+      'dr_cb': true,
+      'client.id': 'my-client'
+  });
 
-const consumer = new kafka.KafkaConsumer({
-    'metadata.broker.list': cfg.MBR_LIST,
-    'group.id': 'web_socket_group',
-    'fetch.wait.max.ms': 1,
-    'fetch.min.bytes': 1,
-    'queue.buffering.max.ms': 100,
-    'enable.auto.commit': true
-});
+  ws.producer.connect();
 
-consumer.connect();
-producer.connect();
+  ws.producer_ready = false;
+  ws.producer
+    .on('ready', () => {
+      ws.producer_ready = true;
+      resumeWsWhenKafkaReady(ws);
+      console.log('Producer is ready')}
+    )
+    .on('error', e => console.error(e))
+    .on('disconnected', () => console.log(`Producer of ws ${ws.cnt} has disconnected`));
+
+}
 
 // **************
 // Kafka Consumer
 // **************
-producer.on('ready', () => console.log('Producer is ready'))
-  .on('error',console.error);
+function initConsumer(ws){
+  ws.consumer = new kafka.KafkaConsumer({
+      'metadata.broker.list': cfg.MBR_LIST,
+      'group.id': 'web_socket_group',
+      'fetch.wait.max.ms': 1,
+      'fetch.min.bytes': 1,
+      'queue.buffering.max.ms': 100,
+      'enable.auto.commit': true
+  });
 
-consumer.on('ready', function() {
-    console.log('Consumer is ready');
-  })
-  .on('data', function(data) {
-    console.log(data);
-    s_msg = data.value.toString();
-    console.log(`Message received from Kafka ${s_msg}`)
+  ws.consumer_ready = false;
+  ws.consumer.on('ready', function() {
     try{
-
-      msg = Msg.fromJSON(s_msg);
-
-      wss.clients.forEach(ws => {
-        if (ws.isAlive === false) return ws.terminate();
-        ws.send(s_msg);
-      });
-    }catch(e){
+      console.log('Consumer is ready');
+      ws.consumer_ready = true;
+      resumeWsWhenKafkaReady(ws);
+      ws.consumer.consume();
+    }
+    catch(e){
       console.error(e);
     }
-});
+    })
+    .on('error', e => console.error(e))
+    .on('data', function(data) {
+      try{
+//        console.log(`Message received from Kafka ${data}`)
+        ws.send(data.value.toString());
+      }catch(e){
+        console.error(e);
+      }
+    })
+    .on('disconnected', () => console.log(`Consumer of ws ${ws.cnt} has disconnected`));;
+
+  ws.consumer.connect();
+}
+
+function resumeWsWhenKafkaReady(ws){
+   if(ws.consumer_ready && ws.producer_ready){
+     ws.resume();
+     console.log(`Resuming ws ${ws.cnt}`);
+   }
+}
+
+function shutDownKafka(ws){
+  try{
+    console.log(`Shutting down kafka ws ${ws.cnt}`);
+    if(ws.consumer){
+      ws.consumer.unsubscribe();
+      ws.consumer.disconnect();
+      ws.consumer = null;
+    }
+    if(ws.producer){
+      ws.producer.flush();
+      ws.producer.disconnect();
+      ws.producer = null;
+    }
+  }catch(e){
+    console.error(e);
+  }
+}
 
 // **************
 // WebSocket Receive
 // **************
-wss.on('connection', ws => {
-  ws.on('pong', () => ws.isAlive = true); //heartbeat
 
+ws_cnt = 0;
+wss.on('connection', ws => {
+  ws.pause();
+  initConsumer(ws);
+  initProducer(ws);
+
+  ws.cnt = ++ws_cnt;
+  ws.on('close', () => shutDownKafka(ws));
+  ws.on('pong', () => {
+    try{
+      ws.isAlive = true;
+      console.log(`Pong received from ws ${ws.cnt}`);
+    }catch(e){
+      console.error(e);
+    }
+  }); //heartbeat
+  wsOnMsg(ws);
+});
+
+function wsOnMsg(ws){
   ws.on('message', msg => {
-    console.log(msg);
+    // console.log(msg);
 
     try{
       m = Msg.fromJSON(msg);
 
       if (m.isInfo){ //Get info about kafka topics
-        producer.getMetadata(null, (err, res) => {
+        ws.producer.getMetadata(null, (err, res) => {
           if(err){
             console.error(err);
             return;
@@ -75,24 +135,24 @@ wss.on('connection', ws => {
           topics = res.topics.map(t => t.name).filter(n => !n.startsWith('__'));
           m.payload = topics;
           ws.send(m.toString());
+          console.log(m.toString());
         });
       }
       else if(m.isSubscribe){ //Subscribe to specific kafka topics
-        consumer.unsubscribe();
-        consumer.subscribe([m.payload]);
-        consumer.consume();
+        ws.consumer.unsubscribe();
+        ws.consumer.subscribe(m.payload);
 
-        console.log(`Filter for ws set to ${m.payload}`);
+        console.log(`Subscribed to topics: ${m.payload}`);
       }
       else if (m.isNotification){ //publish notificaotin to kafka
-        producer.produce(
+        ws.producer.produce(
           m.device_id,
           null,
           new Buffer(msg),
           undefined,
           Date.now()
         )
-        console.log(`Message sent to kafka`);
+        // console.log(`Message sent to kafka`);
       }
     }
     catch(e){
@@ -103,21 +163,21 @@ wss.on('connection', ws => {
       }
     }
   });
-});
+}
 
 
 // **************
 // WebSocket ping
 // **************
 const interval = setInterval(function ping() {
-  console.log('ping');
   wss.clients.forEach(ws => {
     if (ws.isAlive === false) return ws.terminate();
 
     ws.isAlive = false;
+    console.log(`Pinging ws ${ws.cnt}`);
     ws.ping('', false, true);
   });
-}, 30000);
+}, 60000);
 
 
 // **************
@@ -125,16 +185,13 @@ const interval = setInterval(function ping() {
 // **************
 
 function exitHandler(options, err) {
+  if(err) console.error(err);
   clearInterval(interval);
-  if(producer) producer.disconnect();
-  if(consumer) consumer.disconnect();
+  if(wss) wss.close();
 }
 
 //do something when app is closing
-process.on('exit', exitHandler.bind(null,{cleanup:true}));
-
-//catches ctrl+c event
-process.on('SIGINT', exitHandler.bind(null, {exit:true}));
-
-//catches uncaught exceptions
-process.on('uncaughtException', exitHandler.bind(null, {exit:true}));
+process
+  .on('exit', exitHandler.bind(null,{cleanup:true}))
+  .on('SIGINT', exitHandler.bind(null, {exit:true}))
+  .on('uncaughtException', exitHandler.bind(null, {exit:true}));

@@ -10,11 +10,15 @@ module.exports = class Msg {
   }
 
   toString(){
-    if(this.isInfo || this.isSubscribe){
-      return `{"type":"${MSG_TYPE_SUBSCRIBE}","payload":"${JSON.stringify(this.payload)}"}`
-      // return JSON.stringify({type:this.type, payload:this.payload});
+    if(this.isSubscribe){
+      return `{"type":"${MSG_TYPE_SUBSCRIBE}"` + (this.payload? `,"payload":${JSON.stringify(this.payload)}`:``) + `}`;
     }
-    return `{"type":"${this.type}","device_id":"${this.device_id}","payload":"${this.payload}"}`
+    if(this.isInfo){
+      // return `{"type":"${MSG_TYPE_INFO}","payload":${JSON.stringify(this.payload)}}`;
+      return `{"type":"${MSG_TYPE_INFO}"` + (this.payload? `,"payload":${JSON.stringify(this.payload)}`:``) + `}`;
+    }
+
+    return `{"type":"${this.type}","device_id":"${this.device_id}","payload":"${this.payload}"}`;
   }
 
   get isInfo(){
@@ -44,5 +48,13 @@ module.exports = class Msg {
 
   static createNotification(device_id, payload){
     return new Msg(MSG_TYPE_NOTIFY, device_id, payload);
+  }
+
+  static createSubscribe(devices){
+    return new Msg(MSG_TYPE_SUBSCRIBE, null, devices);
+  }
+
+  static createInfo(){
+    return new Msg(MSG_TYPE_INFO, null, null);
   }
 }

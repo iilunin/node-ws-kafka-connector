@@ -15,7 +15,7 @@ function getBrockerList(){
 function initProducer(ws){
   ws.producer = new kafka.Producer({
       'metadata.broker.list': getBrockerList(),
-      'queue.buffering.max.messages': 100000,
+      'queue.buffering.max.messages': 5000,
       'queue.buffering.max.ms': 100,
       'batch.num.messages': 100,
       'dr_cb': true,
@@ -25,7 +25,7 @@ function initProducer(ws){
   ws.producer.connect();
 
   ws.producer.ready = false;
-  ws.producer.setPollInterval(1000);
+  ws.producer.setPollInterval(100);
 
   ws.producer
     .on('ready', () => {
@@ -35,7 +35,10 @@ function initProducer(ws){
     })
     .on('error', e => console.error(e))
     .on('disconnected', () => console.log(`Producer of ws ${ws.cnt} has disconnected`))
-    .on('delivery-report', (err, rpt) => console.log(rpt));
+    .on('delivery-report', (err, rpt) => {
+	if (err) console.error(err);
+	if (rpt) console.log(rpt);
+	});
 }
 
 // **************
@@ -127,7 +130,7 @@ wss.on('connection', ws => {
 
 function wsOnMsg(ws){
   ws.on('message', msg => {
-    // console.log(msg);
+    console.log(msg);
       try {
           let m = Msg.fromJSON(msg);
 
@@ -150,14 +153,14 @@ function wsOnMsg(ws){
               console.log(`Subscribed to topics: ${m.payload}`);
           }
           else if (m.isNotification) { //publish notificaotin to kafka
-              ws.producer.produce(
+             r = ws.producer.produce(
                   m.device_id,
                   null,
                   new Buffer(msg),
                   null,
                   Date.now()
               )
-              // console.log(`Message sent to kafka`);
+              console.log(`Message ${r} sent to kafka`);
           }
       }
       catch (e) {

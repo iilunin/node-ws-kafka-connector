@@ -2,7 +2,7 @@ const WebSocket = require('ws');
 const cfg   = require('./config-test');
 const Msg   = require('./msg');
 
-const ws = new WebSocket(cfg.WSS_URL);
+const ws = new WebSocket(process.env.WSS_URL || cfg.WSS_URL);
 
 const args = process.argv.slice(2);
 
@@ -10,7 +10,7 @@ const PRODUCER = 'PRODUCER';
 const CONSUMER = 'CONSUMER';
 
 const type = args.length > 0 && args[0] === 'c'? CONSUMER : PRODUCER;
-const MPS = 20000;
+const MPS = 100;
 const TOTAL_MSGS = 100000;
 
 process.on('uncaughtException', e => console.error(e));

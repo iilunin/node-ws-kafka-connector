@@ -15,8 +15,8 @@ function getBrockerList(){
 function initProducer(ws){
   ws.producer = new kafka.Producer({
       'metadata.broker.list': getBrockerList(),
-      'queue.buffering.max.messages': 1000000,
-      'queue.buffering.max.ms': 5000,
+      'queue.buffering.max.messages': 10000,
+      'queue.buffering.max.ms': 100,
       'batch.num.messages': 100,
       'dr_cb': true,
       'client.id': 'my-client'

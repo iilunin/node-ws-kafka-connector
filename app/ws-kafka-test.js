@@ -10,7 +10,7 @@ const PRODUCER = 'PRODUCER';
 const CONSUMER = 'CONSUMER';
 
 const type = args.length > 0 && args[0] === 'c'? CONSUMER : PRODUCER;
-const MPS = 1000;
+const MPS = 100;
 const TOTAL_MSGS = 100000;
 
 process.on('uncaughtException', e => console.error(e));

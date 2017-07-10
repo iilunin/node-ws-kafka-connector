@@ -36,8 +36,8 @@ function initProducer(ws){
     .on('error', e => console.error(e))
     .on('disconnected', () => console.log(`Producer of ws ${ws.cnt} has disconnected`))
     .on('delivery-report', (err, rpt) => {
-	if (err) console.error(err);
-	if (rpt) console.log(rpt);
+        if (err) console.error(err);
+        if (rpt) console.log(rpt);
 	});
 }
 
@@ -128,6 +128,8 @@ wss.on('connection', ws => {
     wsOnMsg(ws);
 });
 
+now = new Date().getTime();
+
 function wsOnMsg(ws){
   ws.on('message', msg => {
     console.log(msg);
@@ -153,14 +155,18 @@ function wsOnMsg(ws){
               console.log(`Subscribed to topics: ${m.payload}`);
           }
           else if (m.isNotification) { //publish notificaotin to kafka
-             r = ws.producer.produce(
+             ws.producer.produce(
                   m.device_id,
                   null,
                   new Buffer(msg),
                   null,
                   Date.now()
-              )
-              console.log(`Message ${r} sent to kafka`);
+              );
+             
+             if(new Date().getTime() - now > 100) {
+                 ws.producer.flush();
+                 now = new Date().getTime();
+             }
           }
       }
       catch (e) {

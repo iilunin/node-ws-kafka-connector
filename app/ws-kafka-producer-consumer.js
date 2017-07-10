@@ -186,8 +186,8 @@ const interval = setInterval(function ping() {
 // Exit handler
 // **************
 
-function exitHandler(err) {
-    if(err) console.error(err);
+function exitHandler(obj){
+    if(obj.err) console.error(obj.err);
     clearInterval(interval);
     if(wss) wss.close();
 }

@@ -1,11 +1,11 @@
 version: "3"
 services:
   zookeeper:
-    image: wurstmeister/zookeeper
+    image: confluent/zookeeper
     ports:
       - "2181:2181"
   kafka:
-    image: wurstmeister/kafka
+    image: confluent/kafka
     ports:
       - "9092:9092"
     environment:
@@ -14,6 +14,18 @@ services:
       KAFKA_ADVERTISED_PORT: 9092
     links:
       - zookeeper
+  schema-registry:
+    image: confluent/schema-registry
+    ports:
+      - "8081:8081"
+    links:
+      - kafka
+  rest-proxy:
+    image: confluent/rest-proxy
+    ports:
+      - "8082:8082"
+    links:
+      - schema-registry
   node:
       build: .
       ports:

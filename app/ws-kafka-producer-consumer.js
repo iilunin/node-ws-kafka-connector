@@ -15,7 +15,7 @@ function getBrockerList(){
 function initProducer(ws){
   ws.producer = new kafka.Producer({
       'metadata.broker.list': getBrockerList(),
-      'queue.buffering.max.messages': 10000,
+      'queue.buffering.max.messages': 100000,
       'queue.buffering.max.ms': 100,
       'batch.num.messages': 100,
       'dr_cb': true,
@@ -24,15 +24,18 @@ function initProducer(ws){
 
   ws.producer.connect();
 
-  ws.producer_ready = false;
+  ws.producer.ready = false;
+  ws.producer.setPollInterval(1000);
+
   ws.producer
     .on('ready', () => {
-        ws.producer_ready = true;
+        ws.producer.ready = true;
         resumeWsWhenKafkaReady(ws);
         console.log('Producer is ready')
     })
     .on('error', e => console.error(e))
-    .on('disconnected', () => console.log(`Producer of ws ${ws.cnt} has disconnected`));
+    .on('disconnected', () => console.log(`Producer of ws ${ws.cnt} has disconnected`))
+    .on('delivery-report', (err, rpt) => {});
 }
 
 // **************
@@ -48,11 +51,11 @@ function initConsumer(ws){
       'enable.auto.commit': true
   });
 
-  ws.consumer_ready = false;
+  ws.consumer.ready = false;
   ws.consumer.on('ready', function () {
     try {
         console.log('Consumer is ready');
-        ws.consumer_ready = true;
+        ws.consumer.ready = true;
         resumeWsWhenKafkaReady(ws);
         ws.consumer.consume(null);
     }
@@ -75,7 +78,7 @@ function initConsumer(ws){
 }
 
 function resumeWsWhenKafkaReady(ws){
-   if(ws.consumer_ready && ws.producer_ready){
+   if(ws.consumer.ready && ws.producer.ready){
      ws.resume();
      console.log(`Resuming ws ${ws.cnt}`);
    }
@@ -124,7 +127,7 @@ wss.on('connection', ws => {
 
 function wsOnMsg(ws){
   ws.on('message', msg => {
-    console.log(msg);
+    // console.log(msg);
       try {
           let m = Msg.fromJSON(msg);
 

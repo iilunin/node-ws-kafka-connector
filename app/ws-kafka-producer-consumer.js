@@ -163,10 +163,10 @@ function wsOnMsg(ws){
                   Date.now()
               );
              
-             if(new Date().getTime() - now > 100) {
-                 ws.producer.flush();
-                 now = new Date().getTime();
-             }
+             // if(new Date().getTime() - now > 100) {
+             //     ws.producer.flush();
+             //     now = new Date().getTime();
+             // }
           }
       }
       catch (e) {

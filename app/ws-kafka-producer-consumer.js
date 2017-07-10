@@ -35,7 +35,7 @@ function initProducer(ws){
     })
     .on('error', e => console.error(e))
     .on('disconnected', () => console.log(`Producer of ws ${ws.cnt} has disconnected`))
-    .on('delivery-report', (err, rpt) => {});
+    .on('delivery-report', (err, rpt) => console.log(rpt));
 }
 
 // **************

@@ -12,17 +12,17 @@ const consumer = new kafka.KafkaConsumer({
 
 consumer.connect();
 
-consumer.on('ready', function() {
+consumer.on('ready', function () {
 
     consumer.subscribe([cfg.KAFKA_TOPIC]);
     consumer.consume();
-  })
-  .on('data', function(data) {
+})
+  .on('data', function (data) {
     console.log(`Got a message: \n` +
-                `   topic: ${data.topic}\n` +
-                `   partition: ${data.partition}\n` +
-                `   offset: ${data.offset}\n` +
-                `   payload: ${data.value.toString()}\n`);
+        `   topic: ${data.topic}\n` +
+        `   partition: ${data.partition}\n` +
+        `   offset: ${data.offset}\n` +
+        `   payload: ${data.value.toString()}\n`);
 });
 
 function exitHandler(options, err) {
@@ -33,10 +33,10 @@ function exitHandler(options, err) {
 }
 
 //do something when app is closing
-process.on('exit', exitHandler.bind(null,{cleanup:true}));
+process.on('exit', exitHandler.bind(null, {cleanup: true}));
 
 //catches ctrl+c event
-process.on('SIGINT', exitHandler.bind(null, {exit:true}));
+process.on('SIGINT', exitHandler.bind(null, {exit: true}));
 
 //catches uncaught exceptions
-process.on('uncaughtException', exitHandler.bind(null, {exit:true}));
+process.on('uncaughtException', exitHandler.bind(null, {exit: true}));

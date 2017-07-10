@@ -37,10 +37,10 @@ function produce(){
 
 // pushMessages();
 producer.on('ready', pushMessages);
-producer.on('delivery-report', function(err, report) {
-  if (++MSG_CONFIRMED  == MSG_NUM){
-    producer.disconnect();
-  }
+producer.on('delivery-report', function (err, report) {
+    if (++MSG_CONFIRMED == MSG_NUM) {
+        producer.disconnect();
+    }
 });
 
 function exitHandler(options, err) {
@@ -51,10 +51,10 @@ function exitHandler(options, err) {
 }
 
 //do something when app is closing
-process.on('exit', exitHandler.bind(null,{cleanup:true}));
+process.on('exit', exitHandler.bind(null, {cleanup: true}));
 
 //catches ctrl+c event
-process.on('SIGINT', exitHandler.bind(null, {exit:true}));
+process.on('SIGINT', exitHandler.bind(null, {exit: true}));
 
 //catches uncaught exceptions
-process.on('uncaughtException', exitHandler.bind(null, {exit:true}));
+process.on('uncaughtException', exitHandler.bind(null, {exit: true}));

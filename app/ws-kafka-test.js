@@ -11,7 +11,7 @@ const CONSUMER = 'CONSUMER';
 
 const type = args.length > 0 && args[0] === 'c'? CONSUMER : PRODUCER;
 const MPS = 20000;
-const TOTAL_MSGS = 1000000;
+const TOTAL_MSGS = 100000;
 
 process.on('uncaughtException', e => console.error(e));
 function sleep(ms) {
@@ -25,62 +25,62 @@ async function demo() {
 }
 
 ws.on('open', async function open() {
-  try{
-    if(type === PRODUCER){
+    try {
+        if (type === PRODUCER) {
 
-      var counter = 0;
+            var counter = 0;
 
-      now = new Date().getTime();
+            now = new Date().getTime();
 
-      while(counter < TOTAL_MSGS){
-        // console.log(`NOW:${new Date().getTime()} vs ${now + 1000}`);
-        if(ws.readyState > 1){
-          console.log(`WebSocket State ${ws.readyState}`)
-          return;
+            while (counter < TOTAL_MSGS) {
+                // console.log(`NOW:${new Date().getTime()} vs ${now + 1000}`);
+                if (ws.readyState > 1) {
+                    console.log(`WebSocket State ${ws.readyState}`)
+                    return;
+                }
+
+                for (var i = 0; i < MPS; i++) {
+                    counter++;
+                    ws.send(
+                        Msg.createNotification(
+                            rand(1, 5),
+                            `Date: ${Date.now()} - '${Math.random().toString()}' - ${counter}`
+                        ).toString()
+                    );
+                }
+                console.log(`${counter} | ${new Date().getTime() - now} ms`);
+                wait_time = (now + 1000) - new Date().getTime();
+                if (wait_time > 0)
+                    await sleep(wait_time).catch(e => console.error(e));
+
+                now = new Date().getTime();
+            }
+
+            ws.close(1000);
+
+        } else if (type === CONSUMER) {
+
+            ws.send(Msg.createInfo().toString());
+
         }
-
-        for(var i = 0; i < MPS; i++){
-          counter++;
-          ws.send(
-            Msg.createNotification(
-              rand(1, 5),
-              `Date: ${Date.now()} - '${Math.random().toString()}' - ${counter}`
-            ).toString()
-          );
-        }
-        console.log(`${counter} | ${new Date().getTime() - now} ms`);
-        wait_time = (now + 1000) - new Date().getTime();
-        if(wait_time > 0)
-          await sleep(wait_time).catch(e=>console.error(e));
-
-        now = new Date().getTime();
-      }
-
-      ws.close(1000);
-
-    }else if (type === CONSUMER){
-
-        ws.send(Msg.createInfo().toString());
-
+    } catch (e) {
+        console.error(e);
     }
-  }catch(e){
-    console.error(e);
-  }
 })
 .on('error', e => console.error(e))
 .on('message', function incoming(data) {
-  try{
-    console.log(data);
-    if (type === CONSUMER){
-      msg = Msg.fromJSON(data);
-      if(msg.isInfo){
-        ws.send(Msg.createSubscribe(msg.payload).toString());
-      }
+    try {
+        console.log(data);
+        if (type === CONSUMER) {
+            msg = Msg.fromJSON(data);
+            if (msg.isInfo) {
+                ws.send(Msg.createSubscribe(msg.payload).toString());
+            }
+        }
     }
-  }
-  catch(e){
-    console.error(e);
-  }
+    catch (e) {
+        console.error(e);
+    }
 });
 
 function rand(min,max){

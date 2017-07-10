@@ -8,9 +8,13 @@ const Msg   = require('./msg');
 // **************
 const wss = new WebSocket.Server({ port: process.env.WSS_PORT || cfg.WSS_PORT });
 
+function getBrockerList(){
+    return process.env.KAFKA_MBR || cfg.MBR_LIST;
+}
+
 function initProducer(ws){
   ws.producer = new kafka.Producer({
-      'metadata.broker.list': cfg.MBR_LIST,
+      'metadata.broker.list': getBrockerList(),
       'queue.buffering.max.messages': 1000000,
       'queue.buffering.max.ms': 5000,
       'batch.num.messages': 100,
@@ -23,13 +27,12 @@ function initProducer(ws){
   ws.producer_ready = false;
   ws.producer
     .on('ready', () => {
-      ws.producer_ready = true;
-      resumeWsWhenKafkaReady(ws);
-      console.log('Producer is ready')}
-    )
+        ws.producer_ready = true;
+        resumeWsWhenKafkaReady(ws);
+        console.log('Producer is ready')
+    })
     .on('error', e => console.error(e))
     .on('disconnected', () => console.log(`Producer of ws ${ws.cnt} has disconnected`));
-
 }
 
 // **************
@@ -37,7 +40,7 @@ function initProducer(ws){
 // **************
 function initConsumer(ws){
   ws.consumer = new kafka.KafkaConsumer({
-      'metadata.broker.list': cfg.MBR_LIST,
+      'metadata.broker.list': getBrockerList(),
       'group.id': 'web_socket_group',
       'fetch.wait.max.ms': 1,
       'fetch.min.bytes': 1,
@@ -46,27 +49,27 @@ function initConsumer(ws){
   });
 
   ws.consumer_ready = false;
-  ws.consumer.on('ready', function() {
-    try{
-      console.log('Consumer is ready');
-      ws.consumer_ready = true;
-      resumeWsWhenKafkaReady(ws);
-      ws.consumer.consume();
+  ws.consumer.on('ready', function () {
+    try {
+        console.log('Consumer is ready');
+        ws.consumer_ready = true;
+        resumeWsWhenKafkaReady(ws);
+        ws.consumer.consume(null);
     }
-    catch(e){
-      console.error(e);
-    }
-    })
-    .on('error', e => console.error(e))
-    .on('data', function(data) {
-      try{
-//        console.log(`Message received from Kafka ${data}`)
-        ws.send(data.value.toString());
-      }catch(e){
+    catch (e) {
         console.error(e);
-      }
+    }
+  })
+    .on('error', e => console.error(e))
+    .on('data', function (data) {
+        try {
+        console.log(`Message received from Kafka ${data}`);
+        ws.send(data.value.toString());
+        } catch (e) {
+        console.error(e);
+        }
     })
-    .on('disconnected', () => console.log(`Consumer of ws ${ws.cnt} has disconnected`));;
+    .on('disconnected', () => console.log(`Consumer of ws ${ws.cnt} has disconnected`));
 
   ws.consumer.connect();
 }
@@ -87,7 +90,7 @@ function shutDownKafka(ws){
       ws.consumer = null;
     }
     if(ws.producer){
-      ws.producer.flush();
+      // ws.producer.flush();
       ws.producer.disconnect();
       ws.producer = null;
     }
@@ -102,66 +105,65 @@ function shutDownKafka(ws){
 
 ws_cnt = 0;
 wss.on('connection', ws => {
-  ws.pause();
-  initConsumer(ws);
-  initProducer(ws);
+    ws.pause();
+    initConsumer(ws);
+    initProducer(ws);
 
-  ws.cnt = ++ws_cnt;
-  ws.on('close', () => shutDownKafka(ws));
-  ws.on('pong', () => {
-    try{
-      ws.isAlive = true;
-      console.log(`Pong received from ws ${ws.cnt}`);
-    }catch(e){
-      console.error(e);
-    }
-  }); //heartbeat
-  wsOnMsg(ws);
+    ws.cnt = ++ws_cnt;
+    ws.on('close', () => shutDownKafka(ws));
+    ws.on('pong', () => {
+        try {
+            ws.isAlive = true;
+            console.log(`Pong received from ws ${ws.cnt}`);
+        } catch (e) {
+            console.error(e);
+        }
+    }); //heartbeat
+    wsOnMsg(ws);
 });
 
 function wsOnMsg(ws){
   ws.on('message', msg => {
-    // console.log(msg);
+    console.log(msg);
+      try {
+          let m = Msg.fromJSON(msg);
 
-    try{
-      m = Msg.fromJSON(msg);
-
-      if (m.isInfo){ //Get info about kafka topics
-        ws.producer.getMetadata(null, (err, res) => {
-          if(err){
-            console.error(err);
-            return;
+          if (m.isInfo) { //Get info about kafka topics
+              ws.producer.getMetadata(null, (err, res) => {
+                  if (err) {
+                      console.error(err);
+                      return;
+                  }
+                  let topics = res.topics.map(t => t.name).filter(n => !n.startsWith('__'));
+                  m.payload = topics;
+                  ws.send(m.toString());
+                  console.log(m.toString());
+              });
           }
-          topics = res.topics.map(t => t.name).filter(n => !n.startsWith('__'));
-          m.payload = topics;
-          ws.send(m.toString());
-          console.log(m.toString());
-        });
-      }
-      else if(m.isSubscribe){ //Subscribe to specific kafka topics
-        ws.consumer.unsubscribe();
-        ws.consumer.subscribe(m.payload);
+          else if (m.isSubscribe) { //Subscribe to specific kafka topics
+              ws.consumer.unsubscribe();
+              ws.consumer.subscribe(m.payload);
 
-        console.log(`Subscribed to topics: ${m.payload}`);
+              console.log(`Subscribed to topics: ${m.payload}`);
+          }
+          else if (m.isNotification) { //publish notificaotin to kafka
+              ws.producer.produce(
+                  m.device_id,
+                  null,
+                  new Buffer(msg),
+                  null,
+                  Date.now()
+              )
+              // console.log(`Message sent to kafka`);
+          }
       }
-      else if (m.isNotification){ //publish notificaotin to kafka
-        ws.producer.produce(
-          m.device_id,
-          null,
-          new Buffer(msg),
-          undefined,
-          Date.now()
-        )
-        // console.log(`Message sent to kafka`);
+      catch (e) {
+          if (e instanceof SyntaxError) {
+              console.error(`Invalid JSON string '${msg}'`);
+          } else {
+              console.error(e);
+          }
       }
-    }
-    catch(e){
-      if(e instanceof SyntaxError){
-        console.error(`Invalid JSON string '${msg}'`);
-      }else{
-        console.error(e);
-      }
-    }
   });
 }
 
@@ -184,14 +186,14 @@ const interval = setInterval(function ping() {
 // Exit handler
 // **************
 
-function exitHandler(options, err) {
-  if(err) console.error(err);
-  clearInterval(interval);
-  if(wss) wss.close();
+function exitHandler(err) {
+    if(err) console.error(err);
+    clearInterval(interval);
+    if(wss) wss.close();
 }
 
 //do something when app is closing
 process
-  .on('exit', exitHandler.bind(null,{cleanup:true}))
-  .on('SIGINT', exitHandler.bind(null, {exit:true}))
-  .on('uncaughtException', exitHandler.bind(null, {exit:true}));
+  .on('exit', exitHandler.bind(null, {cleanup: true}))
+  .on('SIGINT', exitHandler.bind(null, {exit: true}))
+  .on('uncaughtException', exitHandler.bind(null, {exit: true}));

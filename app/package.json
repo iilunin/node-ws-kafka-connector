@@ -9,7 +9,6 @@
   "license": "ISC",
   "dependencies": {
     "node-rdkafka": "^1.0.4",
-    "pm2": "^2.5.0",
     "ws": "^3.0.0"
   }
 }

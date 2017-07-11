@@ -10,7 +10,7 @@ const PRODUCER = 'PRODUCER';
 const CONSUMER = 'CONSUMER';
 
 const type = args.length > 0 && args[0] === 'c'? CONSUMER : PRODUCER;
-const MPS = 1;
+const MPS = 5000;
 const TOTAL_MSGS = 100000;
 
 process.on('uncaughtException', e => console.error(e));
@@ -25,6 +25,14 @@ ws.on('open', async function open() {
             var counter = 0;
 
             now = new Date().getTime();
+
+            ws.send(
+                Msg.createTopics([1,2,3,4,5]).toString()
+            );
+
+            wait_time = (now + 1000) - new Date().getTime();
+            if (wait_time > 0)
+                await sleep(wait_time).catch(e => console.error(e));
 
             while (counter < TOTAL_MSGS) {
                 // console.log(`NOW:${new Date().getTime()} vs ${now + 1000}`);

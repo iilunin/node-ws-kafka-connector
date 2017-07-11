@@ -1,6 +1,7 @@
 const MSG_TYPE_INFO = 'info';
 const MSG_TYPE_SUBSCRIBE = 'subscribe';
 const MSG_TYPE_NOTIFY     = 'notification';
+const MSG_TYPE_CREATE_TOPICS = 'create_topics'
 
 module.exports = class Msg {
   constructor(type, device_id, payload) {
@@ -17,8 +18,16 @@ module.exports = class Msg {
       // return `{"type":"${MSG_TYPE_INFO}","payload":${JSON.stringify(this.payload)}}`;
       return `{"type":"${MSG_TYPE_INFO}"` + (this.payload? `,"payload":${JSON.stringify(this.payload)}`:``) + `}`;
     }
+    if(this.isCreateTopics){
+        // return `{"type":"${MSG_TYPE_INFO}","payload":${JSON.stringify(this.payload)}}`;
+        return `{"type":"${MSG_TYPE_CREATE_TOPICS}"` + (this.payload? `,"payload":${JSON.stringify(this.payload)}`:``) + `}`;
+    }
 
     return `{"type":"${this.type}","device_id":"${this.device_id}","payload":"${this.payload}"}`;
+  }
+
+  get isCreateTopics(){
+      return this.type == MSG_TYPE_CREATE_TOPICS;
   }
 
   get isInfo(){
@@ -57,4 +66,8 @@ module.exports = class Msg {
   static createInfo(){
     return new Msg(MSG_TYPE_INFO, null, null);
   }
+
+    static createTopics(topics){
+        return new Msg(MSG_TYPE_CREATE_TOPICS, null, topics);
+    }
 }

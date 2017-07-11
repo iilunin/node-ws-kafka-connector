@@ -33,6 +33,62 @@ function initProducer(ws){
             console.log('Producer is ready')
         })
         .on('error', e => console.error(e));
+
+    ws.mq = [];
+    ws.mq_limit = 20000;
+    ws.mq_send_interval = setInterval(ws.sendMessages.bind(ws), 1000);
+}
+
+WebSocket.prototype.addToQueue = function(message){
+    this.mq.push(message);
+
+    if(this.mq.length > 0){
+        if(this.mq.length >= this.mq_limit){
+            this.sendMessages();
+        }
+        //Schedule to send
+    }
+}
+
+WebSocket.prototype.shutDown = function() {
+
+    try{
+        console.log(`Shutting down ws & kafka ${this.cnt}`);
+
+        clearInterval(this.mq_send_interval);
+        if(this.consumer && this.consumer.ready){
+            this.consumer.close(edCallback);
+            this.consumer = null;
+
+        }
+        if(this.producer && this.producer.ready){
+            this.producer.close(edCallback);
+            this.producer = null;
+        }
+    }catch(e){
+        console.error(e);
+    }
+}
+
+WebSocket.prototype.sendMessages = function(){
+
+    try {
+        if (this.mq.length == 0 || !this.producer.ready)
+            return;
+
+        let map = {};
+
+        this.mq.forEach(msg => {
+            t = (map[msg.device_id] = map[msg.device_id] || {topic: msg.device_id});
+            (t.messages = t.messages || []).push(msg.toString());
+        });
+
+        this.mq.length = 0;
+        this.producer.send(Object.values(map), edCallback);
+
+    } catch (e) {
+        console.log(e)
+    }
 }
 
 // **************
@@ -81,7 +137,7 @@ function initConsumer(ws, topics){
         })
         .on('message', function (data) {
             try {
-                console.log(`Message received from Kafka ${data}`);
+                // console.log(`Message received from Kafka ${data}`);
                 ws.send(data.value);
             } catch (e) {
                 console.error(e);
@@ -96,23 +152,6 @@ function resumeWsWhenKafkaReady(ws){
     if(ws.producer.ready){
         ws.resume();
         console.log(`Resuming ws ${ws.cnt}`);
-    }
-}
-
-function shutDownKafka(ws){
-    try{
-        console.log(`Shutting down kafka ws ${ws.cnt}`);
-        if(ws.consumer && ws.consumer.ready){
-            ws.consumer.close(edCallback);
-            ws.consumer = null;
-
-        }
-        if(ws.producer && ws.producer.ready){
-            ws.producer.close(edCallback);
-            ws.producer = null;
-        }
-    }catch(e){
-        console.error(e);
     }
 }
 
@@ -133,7 +172,9 @@ wss.on('connection', ws => {
         initProducer(ws);
 
         ws.cnt = ++ws_cnt;
-        ws.on('close', () => shutDownKafka(ws));
+        ws.on('close', () => {
+            ws.shutDown();
+        });
         ws.on('pong', () => {
             try {
                 ws.isAlive = true;
@@ -192,13 +233,9 @@ function wsOnMsg(ws){
                 //     null,
                 //     Date.now()
                 // );
+                ws.addToQueue(m);
+                // ws.sendMessages([msg]);
 
-                ws.producer.send(
-                    [
-                        {topic: m.device_id, messages: [msg.toString()]}
-                    ],
-                    edCallback
-                );
                 // if(new Date().getTime() - now > 100) {
                 //     ws.producer.flush();
                 //     now = new Date().getTime();

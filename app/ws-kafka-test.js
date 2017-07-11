@@ -10,7 +10,7 @@ const PRODUCER = 'PRODUCER';
 const CONSUMER = 'CONSUMER';
 
 const type = args.length > 0 && args[0] === 'c'? CONSUMER : PRODUCER;
-const MPS = 5000;
+const MPS = 10000;
 const TOTAL_MSGS = 100000;
 
 process.on('uncaughtException', e => console.error(e));
@@ -46,7 +46,8 @@ ws.on('open', async function open() {
                     ws.send(
                         Msg.createNotification(
                             rand(1, 5),
-                            `Date: ${Date.now()} - '${Math.random().toString()}' - ${counter}`
+                            `${Date.now()}`
+                            //`Date: ${Date.now()} - '${Math.random().toString()}' - ${counter}`
                         ).toString()
                     );
                 }
@@ -72,11 +73,14 @@ ws.on('open', async function open() {
 .on('error', e => console.error(e))
 .on('message', function incoming(data) {
     try {
-        console.log(data);
+
         if (type === CONSUMER) {
             msg = Msg.fromJSON(data);
+
             if (msg.isInfo) {
                 ws.send(Msg.createSubscribe(msg.payload).toString());
+            }else{
+                console.log(`#${++received}; travel time ${Date.now() - msg.payload} ms`);
             }
         }
     }
@@ -84,6 +88,8 @@ ws.on('open', async function open() {
         console.error(e);
     }
 });
+
+var received = 0;
 
 function rand(min,max){
     return Math.floor(Math.random()*(max-min+1)+min);

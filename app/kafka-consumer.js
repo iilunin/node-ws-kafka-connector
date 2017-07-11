@@ -2,7 +2,7 @@ const kafka = require('node-rdkafka');
 const cfg   = require('./config');
 
 const consumer = new kafka.KafkaConsumer({
-    'metadata.broker.list': cfg.MBR_LIST,
+    'metadata.broker.list': process.env.KAFKA_MBR || cfg.MBR_LIST,
     'group.id': 'my_group_id',
     'fetch.wait.max.ms': 1,
     'fetch.min.bytes': 1,
@@ -12,18 +12,23 @@ const consumer = new kafka.KafkaConsumer({
 
 consumer.connect();
 
-consumer.on('ready', function () {
+consumer
+    .on('ready', function () {
 
-    consumer.subscribe([cfg.KAFKA_TOPIC]);
+    consumer.subscribe(['1', '2']);
     consumer.consume();
 })
   .on('data', function (data) {
-    console.log(`Got a message: \n` +
-        `   topic: ${data.topic}\n` +
-        `   partition: ${data.partition}\n` +
-        `   offset: ${data.offset}\n` +
-        `   payload: ${data.value.toString()}\n`);
-});
+      try {
+          console.log(`Got a message: \n` +
+              `   topic: ${data.topic}\n` +
+              `   partition: ${data.partition}\n` +
+              `   offset: ${data.offset}\n` +
+              `   payload: ${data.value.toString()}\n`);
+      } catch (e) {
+          console.error(e);
+      }
+  }).on('error', e => console.error(e));
 
 function exitHandler(options, err) {
   // if (options.cleanup) console.log('clean');

@@ -8,6 +8,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "kafka-node": "^2.0.0",
     "node-rdkafka": "^1.0.4",
     "ws": "^3.0.0"
   }

@@ -6,12 +6,29 @@ MSG_NUM = 1;
 MSG_CONFIRMED = 0;
 
 const producer = new kafka.Producer({
-    'metadata.broker.list': cfg.MBR_LIST,
+    'metadata.broker.list': process.env.KAFKA_MBR || cfg.MBR_LIST,
     'dr_cb': true,
-    'client.id': 'my-client'
+    'dr_msg_cb': true,
+    'client.id': 'test-kafka-client'
+}, {
+    'request.required.acks': 1
 });
 
-producer.connect();
+producer.on('ready', pushMessages);
+producer.on('error', e => console.error(e));
+producer.on('delivery-report', function (err, report) {
+    console.log("delivery report");
+
+    if (++MSG_CONFIRMED == MSG_NUM) {
+        producer.disconnect();
+    }
+});
+
+producer.connect(null, (e, d) =>{
+    if(e)console.error(e);
+    if(d)console.log(d);
+});
+
 producer.setPollInterval(100);
 
 function pushMessages(){
@@ -19,15 +36,25 @@ function pushMessages(){
     MSG_NUM = parseInt(args[0]);
   }
 
-  for(i = 0; i < MSG_NUM; i++){
-    console.log(i);
-    produce();
+  try {
+      for (i = 0; i < MSG_NUM; i++) {
+          console.log(i);
+          console.log(produce())
+      }
+
+      // producer.flush(5000, args => console.log(args));
+  }catch(e){
+      console.error(e);
+      producer.disconnect((e,d) => {
+          if(e) console.error(e);
+          if(d) console.log(d);
+      })
   }
 }
 
 function produce(){
   return producer.produce(
-    cfg.KAFKA_TOPIC,
+    "1",
     null,
     new Buffer('Test message ' + Math.random().toString()),
     undefined,
@@ -36,12 +63,7 @@ function produce(){
 }
 
 // pushMessages();
-producer.on('ready', pushMessages);
-producer.on('delivery-report', function (err, report) {
-    if (++MSG_CONFIRMED == MSG_NUM) {
-        producer.disconnect();
-    }
-});
+
 
 function exitHandler(options, err) {
   // if (options.cleanup) console.log('clean');

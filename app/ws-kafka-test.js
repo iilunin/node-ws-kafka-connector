@@ -10,18 +10,12 @@ const PRODUCER = 'PRODUCER';
 const CONSUMER = 'CONSUMER';
 
 const type = args.length > 0 && args[0] === 'c'? CONSUMER : PRODUCER;
-const MPS = 100;
+const MPS = 5000;
 const TOTAL_MSGS = 100000;
 
 process.on('uncaughtException', e => console.error(e));
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-async function demo() {
-  console.log('Taking a break...');
-  await sleep(2000);
-  console.log('Two second later');
 }
 
 ws.on('open', async function open() {

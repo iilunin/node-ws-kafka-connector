@@ -15,11 +15,9 @@ function getBrockerList(){
 function initProducer(ws){
   ws.producer = new kafka.Producer({
       'metadata.broker.list': getBrockerList(),
-      'queue.buffering.max.messages': 5000,
-      'queue.buffering.max.ms': 100,
-      'batch.num.messages': 100,
       'dr_cb': true,
-      'client.id': 'my-client'
+      'dr_msg_cb': true,
+      'client.id': 'test-kafka-client'
   });
 
   ws.producer.connect();
@@ -47,10 +45,10 @@ function initProducer(ws){
 function initConsumer(ws){
   ws.consumer = new kafka.KafkaConsumer({
       'metadata.broker.list': getBrockerList(),
-      'group.id': 'web_socket_group',
+      'group.id': 'my_group_id',
       'fetch.wait.max.ms': 1,
       'fetch.min.bytes': 1,
-      'queue.buffering.max.ms': 100,
+      'queue.buffering.max.ms': 1,
       'enable.auto.commit': true
   });
 

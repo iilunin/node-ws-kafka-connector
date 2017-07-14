@@ -10,8 +10,8 @@ const PRODUCER = 'PRODUCER';
 const CONSUMER = 'CONSUMER';
 
 const type = args.length > 0 && args[0] === 'c'? CONSUMER : PRODUCER;
-const MPS = 10000;
-const TOTAL_MSGS = 100000;
+const MPS = 8000;
+const TOTAL_MSGS = 1000000;
 
 process.on('uncaughtException', e => console.error(e));
 function sleep(ms) {
@@ -78,6 +78,7 @@ ws.on('open', async function open() {
             msg = Msg.fromJSON(data);
 
             if (msg.isInfo) {
+                console.log(`Subscribing to ${msg.payload}`);
                 ws.send(Msg.createSubscribe(msg.payload).toString());
             }else{
                 console.log(`#${++received}; travel time ${Date.now() - msg.payload} ms`);

@@ -8,14 +8,16 @@ const Msg   = require('./msg');
 // **************
 const wss = new WebSocket.Server({ port: process.env.WSS_PORT || cfg.WSS_PORT });
 
-function getBrockerList(){
+function getBrokerList(){
     return process.env.KAFKA_MBR || cfg.MBR_LIST;
 }
 
 function initProducer(ws){
+    console.log(`Init producer on: ${getBrokerList()}`);
+
     const client = new kafka.KafkaClient(
         {
-            'kafkaHost': getBrockerList(),
+            'kafkaHost': getBrokerList(),
             'clientId':'test-kafka-client-2',
             'connectTimeout': 1000,
             'requestTimeout': 60000
@@ -95,9 +97,10 @@ WebSocket.prototype.sendMessages = function(){
 // Kafka Consumer
 // **************
 function initConsumer(ws, topics){
+    console.log(`Init consumer on: ${getBrokerList()}`);
     const client = new kafka.KafkaClient(
         {
-            'kafkaHost': getBrockerList(),
+            'kafkaHost': getBrokerList(),
             'clientId':'test-kafka-client-3',
             'connectTimeout': 1000
         });

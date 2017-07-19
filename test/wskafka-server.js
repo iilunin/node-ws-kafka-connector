@@ -5,6 +5,15 @@ const WSKafka = require('../ws-kafka').WSKafkaConnector,
     cfg = require('./config');
 
 
+// Topics:
+// create topic message example:
+// {"id":23, "t":"topic","a":"create", "p":["1", "2", "5", "7"]}
+//
+// list topics:
+// {"id":157, "t":"topic","a":"list"}
+
+
+
 function getBrokerList(){
     return process.env.KAFKA_MBR || cfg.MBR_LIST;
 }
@@ -27,7 +36,7 @@ const websocket_config ={
 }
 
 const producer_config = {
-    requireAcks: 1,
+    requireAcks: 2,
     ackTimeoutMs: 100,
     partitionerType: 2
 }

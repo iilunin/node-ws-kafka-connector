@@ -1,6 +1,6 @@
 const WebSocket = require('ws');
 const cfg   = require('./config-test');
-const Msg   = require('./msg');
+const Msg   = require('../lib/msg');
 
 const ws = new WebSocket(process.env.WSS_URL || cfg.WSS_URL);
 

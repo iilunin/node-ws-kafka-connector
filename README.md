@@ -3,7 +3,10 @@
 WebSocket server which implements message protocol to work with some basic kafka APIs,
 such as create, list, subscribe to topics, push messages.
 
-``` javascript
+Based on [SOHU-Co/kafka-node](https://github.com/SOHU-Co/kafka-node) 
+and [WebSockets](https://github.com/websockets/ws)
+
+```javascript
 const kafka_config = {
     //node-kafka options
     kafkaHost: 'localhost:9092',

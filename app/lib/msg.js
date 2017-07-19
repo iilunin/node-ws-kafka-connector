@@ -1,3 +1,5 @@
+'use strict';
+
 const MSG_TYPE_INFO = 'info';
 const MSG_TYPE_SUBSCRIBE = 'subscribe';
 const MSG_TYPE_NOTIFY     = 'notification';
@@ -27,19 +29,19 @@ module.exports = class Msg {
   }
 
   get isCreateTopics(){
-      return this.type == MSG_TYPE_CREATE_TOPICS;
+      return this.type === MSG_TYPE_CREATE_TOPICS;
   }
 
   get isInfo(){
-    return this.type == MSG_TYPE_INFO;
+    return this.type === MSG_TYPE_INFO;
   }
 
   get isSubscribe(){
-    return this.type == MSG_TYPE_SUBSCRIBE;
+    return this.type === MSG_TYPE_SUBSCRIBE;
   }
 
   get isNotification(){
-    return this.type == MSG_TYPE_NOTIFY;
+    return this.type === MSG_TYPE_NOTIFY;
   }
 
   static get MSG_TYPE_NOTIFY() {

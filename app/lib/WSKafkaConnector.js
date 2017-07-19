@@ -18,7 +18,7 @@ class WSKafkaConnector extends EventEmitter {
         this.kafka_config = kc;
         this.websocket_config = wsc;
         this.producer_config = prod_c;
-        this.kcc = consumer_c;
+        this.consumer_config = consumer_c;
     }
 
     start(){
@@ -62,7 +62,7 @@ class WSKafkaConnector extends EventEmitter {
                 debug(`Pinging ws ${ws.cnt}`);
                 ws.ping('', false, true);
             });
-        }, 60000);
+        }.bind(this), 30000);
     }
 
     stop(){
@@ -78,7 +78,7 @@ class WSKafkaConnector extends EventEmitter {
 
         const client = new kafka.KafkaClient(this.kafka_config);
 
-        ws.producer = new kafka.Producer(client, this.prod_c);
+        ws.producer = new kafka.Producer(client, this.producer_config);
 
         ws.producer
             .on('ready', () => {
@@ -108,22 +108,22 @@ class WSKafkaConnector extends EventEmitter {
             return {topic: t.topic, offset: t.offset || 0}
         });
 
-        const producer_config_copy = Object.assign({}, this.producer_config);
+        const consumer_config_copy = Object.assign({}, this.consumer_config);
         //Set consumer group received from the payload
-        producer_config_copy.groupId = subscription_msg.consumer_group || producer_config_copy.groupId;
+        consumer_config_copy.groupId = subscription_msg.consumer_group || consumer_config_copy.groupId;
 
         ws.consumer = new kafka.Consumer(
             client,
             topicsPayload,
-            producer_config_copy);
+            consumer_config_copy);
 
 
         ws.consumer
             .on('ready', function () {
-                this.emit('consumer-read', ws.consumer);
+                this.emit('consumer-ready', ws.consumer);
                 debug('Consumer is ready');
             })
-            .on('error', e => this.emit('error', e))
+            .on('error', e => this.emit('consumer-error', e))
             .on('offsetOutOfRange', e => {
                 this.emit('error', e)
             })
@@ -154,27 +154,30 @@ class WSKafkaConnector extends EventEmitter {
     wsOnMsg(ws){
         ws.on('message', msg => {
             debug(msg);
-            this.emit('message', msg);
+            this.emit('ws-message', msg);
 
             try {
 
                 let m = Msg.fromJSON(msg);
 
-                if (m.isCreateTopics())
-                 {
+                if (m.isCreateTopics){
+                    if(m.payload === undefined){
+                        ws.send("Specify topics to subscribe in the 'payload'"); //TODO: make standard error msg.
+                    }else {
 // const test_topics = [
 //     {'test1': [0,1,2,3]}
 // ]
-                    // ws.producer.createTopics(test_topics, (e,d) =>{
-                    ws.producer.createTopics(m.payload, (e,d) =>{
+                        // ws.producer.createTopics(test_topics, (e,d) =>{
+                        ws.producer.createTopics(m.payload, (e, d) => {
 
 
-                        ws.send("Topic created" + d);
+                            ws.send("Topic created" + d);
 
-                        if(e) console.error(e);
-                        else
-                            debug(`Created topics ${m.payload}`);
-                    })
+                            if (e) console.error(e);
+                            else
+                                debug(`Created topics ${m.payload}`);
+                        })
+                    }
 
                 }
                 if (m.isInfo) { //Get info about kafka topics
@@ -198,11 +201,10 @@ class WSKafkaConnector extends EventEmitter {
                 }
             }
             catch (e) {
+                this.emit('error', e);
                 if (e instanceof SyntaxError) {
-                    console.error(`Invalid JSON string '${msg}'`);
-                } else {
-                    this.emit('error', e);
-                    throw e;
+                    debug(`Invalid JSON string '${msg}'`);
+
                 }
             }
         });

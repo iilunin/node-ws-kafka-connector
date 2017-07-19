@@ -26,6 +26,12 @@ const websocket_config ={
     port: 8085
 }
 
+const producer_config = {
+    requireAcks: 1,
+    ackTimeoutMs: 100,
+    partitionerType: 2
+}
+
 const consumer_config ={
     groupId: 'kafka-node-group', //should be set by message to ws
         // Auto commit config
@@ -41,10 +47,25 @@ const consumer_config ={
 let wsk = new WSKafka(
     kafka_config,
     websocket_config,
+    producer_config,
     consumer_config
     );
 
-wsk.on('ws-connection', (ws, req) => debug('connection'));
+wsk.on('ws-connection', (ws, req) => debug('connection'))
+    .on('ws-close', () => debug('ws-close'))
+    .on('wss-ready', () => debug('wss-ready'))
+    .on('producer-ready', () => debug('producer-ready'))
+    .on('producer-error', () => debug('producer-error'))
+    .on('consumer-ready', () => debug('consumer-ready'))
+    .on('consumer-error', () => debug('consumer-error'))
+    .on('consumer-message', () => debug('consumer-message'))
+    .on('error', () => debug('error'))
+
+
+process.on('uncaughtException', e => {
+    debug(e);
+    wsk.stop();
+}).on('SIGINT', wsk.stop);
 
 try {
     wsk.start();
@@ -52,3 +73,4 @@ try {
     debug(e);
     wsk.stop();
 }
+

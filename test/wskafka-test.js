@@ -44,7 +44,7 @@ const consumer_config ={
     fetchMaxBytes: 1024 * 10,
 }
 
-let wsk = new WSKafka(
+const wsk = new WSKafka(
     kafka_config,
     websocket_config,
     producer_config,
@@ -59,7 +59,7 @@ wsk.on('ws-connection', (ws, req) => debug('connection'))
     .on('consumer-ready', () => debug('consumer-ready'))
     .on('consumer-error', () => debug('consumer-error'))
     .on('consumer-message', () => debug('consumer-message'))
-    .on('error', () => debug('error'))
+    .on('error', () => debug('error'));
 
 
 process.on('uncaughtException', e => {

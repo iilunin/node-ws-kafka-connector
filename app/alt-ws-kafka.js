@@ -86,6 +86,8 @@ WebSocket.prototype.sendMessages = function(){
         });
 
         this.mq.length = 0;
+
+        // this.producer.client.refreshMetadata();
         this.producer.send(Object.values(map), edCallback);
 
     } catch (e) {

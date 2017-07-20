@@ -11,6 +11,9 @@ const WSKafka = require('../ws-kafka').WSKafkaConnector,
 //
 // list topics:
 // {"id":157, "t":"topic","a":"list"}
+//
+// subscribe to topic:
+// {"id":3,"t":"topic","a":"subscribe","s":0,"p":["1","2","5","7"]}
 
 
 

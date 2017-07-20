@@ -13,12 +13,19 @@ const WSKafka = require('../ws-kafka').WSKafkaConnector,
 // {"id":157, "t":"topic","a":"list"}
 //
 // subscribe to topic:
-// {"id":3,"t":"topic","a":"subscribe","s":0,"p":["1","2","5","7"]}
+// {"id":1000,"t":"topic","a":"subscribe","p":{"t":["t1","t2"],"consumer_group":"ingestion_1"}}
+//
+// send notification. payload: t - topic, m - your message
+// {"id":5,"t":"notif","a":"create","p":{"t":"t2", "m":"hello"}}
 
 
 
 function getBrokerList(){
     return process.env.KAFKA_MBR || cfg.MBR_LIST;
+}
+
+function getWebSocketPort(){
+    return process.env.WSS_PORT || cfg.WSS_PORT;
 }
 
 const kafka_config = {
@@ -35,11 +42,11 @@ const kafka_config = {
 }
 
 const websocket_config ={
-    port: 8085
+    port: getWebSocketPort()
 }
 
 const producer_config = {
-    requireAcks: 2,
+    requireAcks: 1,
     ackTimeoutMs: 100,
     partitionerType: 2
 }
@@ -53,7 +60,7 @@ const consumer_config ={
     // Fetch message config
     fetchMaxWaitMs: 100,
     fetchMinBytes: 1,
-    fetchMaxBytes: 1024 * 10,
+    fetchMaxBytes: 1024 * 1024,
 }
 
 const wsk = new WSKafka(
@@ -76,7 +83,8 @@ wsk.on('ws-connection', (ws, req) => debug('connection'))
 
 process.on('uncaughtException', e => {
     debug(e);
-    wsk.stop().bind(wsk);
+    wsk.stop.bind(wsk);
+    wsk.stop();
 }).on('SIGINT', wsk.stop.bind(wsk));
 
 try {

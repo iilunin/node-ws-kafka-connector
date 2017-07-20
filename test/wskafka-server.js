@@ -7,7 +7,7 @@ const WSKafka = require('../ws-kafka').WSKafkaConnector,
 
 // Topics:
 // create topic message example:
-// {"id":23, "t":"topic","a":"create", "p":["1", "2", "5", "7"]}
+// {"id":23, "t":"topic","a":"create", "p":["t1", "t2", "t3", "t4"]}
 //
 // list topics:
 // {"id":157, "t":"topic","a":"list"}
@@ -61,6 +61,8 @@ const consumer_config ={
     fetchMaxWaitMs: 100,
     fetchMinBytes: 1,
     fetchMaxBytes: 1024 * 1024,
+    // Offset
+    fromOffset: false
 }
 
 const wsk = new WSKafka(

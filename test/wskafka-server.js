@@ -73,8 +73,8 @@ wsk.on('ws-connection', (ws, req) => debug('connection'))
 
 process.on('uncaughtException', e => {
     debug(e);
-    wsk.stop();
-}).on('SIGINT', wsk.stop);
+    wsk.stop().bind(wsk);
+}).on('SIGINT', wsk.stop.bind(wsk));
 
 try {
     wsk.start();

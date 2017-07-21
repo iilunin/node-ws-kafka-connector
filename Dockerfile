@@ -1,7 +1,9 @@
 FROM node:8.1.4-alpine
 ENV WORK_DIR=/usr/src/app/
+ENV CONF_DIR=/usr/src/app/conf
 RUN mkdir -p ${WORK_DIR} \
-  && cd ${WORK_DIR}
+    && mkdir -p ${CONF_DIR} \
+    && cd ${WORK_DIR}
 
 WORKDIR ${WORK_DIR}
 
@@ -21,5 +23,6 @@ RUN npm install \
     && apk del .gyp
 
 EXPOSE 8080
+VOLUME ["/usr/src/app/conf"]
 CMD ["node", "test/wskafka-server.js"]
 #CMD ["pm2-docker", "alt-ws-kafka.js"]

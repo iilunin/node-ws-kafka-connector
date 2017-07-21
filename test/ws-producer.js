@@ -26,7 +26,7 @@ ws.on('open', async function open() {
         if(!topic_created && msg.refid === "0000" && msg.s === 0){
             topic_created = true;
             debug(`topics created: ${msg.p}`);
-            sendPayload(ws).catch(e=> debug(e));
+            sendPayload(ws);
         }
 
     });
@@ -46,8 +46,8 @@ function createTopics(ws) {
     ws.send(JSON.stringify(msg));
 }
 
-function sendPayload(ws){
-    return new Promise((resolve, reject)=> {
+async function sendPayload(ws){
+
         try{
             let now = new Date().getTime();
             let counter = 0;
@@ -68,20 +68,20 @@ function sendPayload(ws){
 
                     ws.send(JSON.stringify(msg));
                 }
-                console.log(`${counter} | ${new Date().getTime() - now} ms`);
+                debug(`${counter} | ${new Date().getTime() - now} ms`);
                 let wait_time = (now + 1000) - new Date().getTime();
                 if (wait_time > 0)
-                    sleep(wait_time).catch(e => console.error(e));
+                    await sleep(wait_time);
 
                 now = new Date().getTime();
             }
             ws.close(1000);
-            return resolve();
+
         } catch (e) {
             console.error(e);
-            return reject(e);
+
         }
-    });
+
 }
 
 function rand(min, max) {

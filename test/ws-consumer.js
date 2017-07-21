@@ -5,11 +5,23 @@ const WebSocket = require('ws'),
 
 const TOPIC_COUNT = cfg.TOPICS_COUNT || 5;
 
-process.on('uncaughtException', e => console.error(e));
+process.on('uncaughtException', e => console.error(e))
+    .on('SIGINT', ()=>{
+        clearInterval(mrate);
+        ws.close()});
 
 const ws = new WebSocket(process.env.WSS_URL || cfg.WSS_URL);
 
 let counter = 0;
+let last_counter = 0;
+
+const mrate = setInterval(function () {
+    let rate = counter - last_counter;
+    if(rate > 0) {
+        console.log(`${rate} msgs/s`);
+        last_counter = counter;
+    }
+}, 1000);
 
 ws.on('open', () => {
     subscribeTopics(ws);

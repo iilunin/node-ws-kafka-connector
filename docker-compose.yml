@@ -46,6 +46,18 @@ services:
           - ${CONF_PATH:-$(pwd)/test/configs/}:/usr/src/app/conf:ro
         links:
           - kafka
+  node_consumer_2:
+          build: .
+          ports:
+            - "8082:8080"
+          environment:
+            KAFKA_MBR: "${HOST:-kafka}:9094"
+            DEBUG: ${DEBUG}
+            WSS_PORT: ${WSS_PORT:-8080}
+          volumes:
+            - ${CONF_PATH:-$(pwd)/test/configs/}:/usr/src/app/conf:ro
+          links:
+            - kafka
 #  node_consumer:
 #        build: .
 #        ports:

@@ -76,11 +76,11 @@ wsk.on('ws-connection', (ws, req) => debug('connection'))
     .on('ws-close', () => debug('ws-close'))
     .on('wss-ready', () => debug('wss-ready'))
     .on('producer-ready', () => debug('producer-ready'))
-    .on('producer-error', () => debug('producer-error'))
+    .on('producer-error', (e) => debug(`producer-error ${e}`))
     .on('consumer-ready', () => debug('consumer-ready'))
-    .on('consumer-error', () => debug('consumer-error'))
-    .on('consumer-message', () => debug('consumer-message'))
-    .on('error', () => debug('error'));
+    .on('consumer-error', (e) => debug(`consumer-error ${e}`))
+    .on('consumer-message', () => {})
+    .on('error', (e) => debug(`error ${e}`));
 
 
 process.on('uncaughtException', e => {

@@ -1,3 +1,5 @@
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+
 # Web socket connector to Kafka
 
 WebSocket server which implements message protocol to work with some basic kafka APIs,

@@ -38,7 +38,7 @@ const kafka_config = {
     //custom options
     no_zookeeper_client: true,
     mq_limit: 20000,
-    mq_interval: 1000 //if null, then messages published immediately
+    mq_interval: 200 //if null, then messages published immediately
 }
 
 const websocket_config ={

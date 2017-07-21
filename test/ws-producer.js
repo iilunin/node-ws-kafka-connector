@@ -63,7 +63,7 @@ async function sendPayload(ws){
                         id: counter++,
                         t: "notif",
                         a: "create",
-                        p:{t:`topic_${rand(0, TOPIC_COUNT - 1)}`,m:Date.now()}
+                        p:{t:`topic_${rand(0, TOPIC_COUNT - 1)}`,m:new Date().getTime()}
                     };
 
                     ws.send(JSON.stringify(msg));

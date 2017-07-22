@@ -2,5 +2,5 @@
   "WSS_URL": "ws://localhost:8080",
   "TOPICS_COUNT": 1,
   "TOTAL_MESSAGES": 1000000,
-  "MESSAGE_RATE": 15000
+  "MESSAGE_RATE": 10000
 }

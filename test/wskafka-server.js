@@ -100,7 +100,11 @@ process.on('uncaughtException', e => {
     debug(e);
     wsk.stop.bind(wsk);
     wsk.stop();
-}).on('SIGINT', wsk.stop.bind(wsk));
+}).on('SIGINT', function exit(){
+        debug("EXIT");
+        wsk.stop();
+    }
+);
 
 try {
     wsk.start();

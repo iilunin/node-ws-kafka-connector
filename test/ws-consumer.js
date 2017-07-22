@@ -29,6 +29,9 @@ ws.on('open', () => {
     let msg = JSON.parse(data);
     if(msg.refid === "0000"){
        console.log(msg);
+       if(msg.s === 1){
+           ws.close();
+       }
     }else{
         counter++;
         if(counter % 1000 === 0){

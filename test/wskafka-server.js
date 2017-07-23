@@ -89,11 +89,11 @@ wsk.on('ws-connection', (ws, req) => debug('connection'))
     .on('ws-close', () => debug('ws-close'))
     .on('wss-ready', () => debug('wss-ready'))
     .on('producer-ready', () => debug('producer-ready'))
-    .on('producer-error', (e) => debug(`producer-error ${e}`))
+    .on('producer-error', (e) => console.log(`producer-error ${e}`))
     .on('consumer-ready', () => debug('consumer-ready'))
-    .on('consumer-error', (e) => debug(`consumer-error ${e}`))
+    .on('consumer-error', (e) => console.log(`consumer-error ${e}`))
     .on('consumer-message', () => {})
-    .on('error', (e) => debug(`error ${e}`));
+    .on('error', (e) => console.log(`error ${e}`));
 
 
 process.on('uncaughtException', e => {

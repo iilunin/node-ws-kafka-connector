@@ -33,20 +33,31 @@ ws.on('open', () => {
            ws.close();
        }
     }else{
-        counter++;
-        if(counter % 1000 === 0){
-            let lag = -1;
-            if(msg.p){
-                lag = new Date().getTime() - msg.p;
-            }
+        if(Array.isArray(msg)){
+            msg.forEach(m =>{
+                counter++;
+                handleMsg(m, counter);
+            });
 
-            console.log(`${counter} messages received with interval ${lag}`);
+        }else {
+            counter++;
+            handleMsg(msg, counter);
         }
-
 
         debug(msg);
     }
 });
+
+function handleMsg(msg, counter){
+    if(counter % 1000 === 0){
+        let lag = -1;
+        if(msg.p){
+            lag = new Date().getTime() - msg.p;
+        }
+
+        console.log(`${counter} messages received with interval ${lag}`);
+    }
+}
 
 function subscribeTopics(ws) {
     let msg = {

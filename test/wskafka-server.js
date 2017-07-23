@@ -7,6 +7,13 @@ const WSKafka = require('../ws-kafka').WSKafkaConnector,
 
 let conf_module = {};
 
+function getBrokerList(){
+    return process.env.KAFKA_MBR || cfg.MBR_LIST;
+}
+
+function getWebSocketPort(){
+    return process.env.WSS_PORT || cfg.WSS_PORT;
+}
 
 try {
 
@@ -17,13 +24,6 @@ try {
     }
 }catch(e){
     console.log(`default config loaded`);
-    function getBrokerList(){
-        return process.env.KAFKA_MBR || cfg.MBR_LIST;
-    }
-
-    function getWebSocketPort(){
-        return process.env.WSS_PORT || cfg.WSS_PORT;
-    }
 
     conf_module.kafka_config = {
         //node-kafka options
@@ -33,9 +33,7 @@ try {
         requestTimeout: 60000,
         autoConnect: true,
         //custom options
-        no_zookeeper_client: true,
-        mq_limit: 20000,
-        mq_interval: 200 //if null, then messages published immediately
+        no_zookeeper_client: true
     };
 
     conf_module.websocket_config ={
@@ -45,7 +43,10 @@ try {
     conf_module.producer_config = {
         requireAcks: 1,
         ackTimeoutMs: 100,
-        partitionerType: 2
+        partitionerType: 2,
+        // custom options
+        mq_limit: 20000,
+        mq_interval: 200 //if null, then messages published immediately
     };
 
     conf_module.consumer_config ={
@@ -59,7 +60,10 @@ try {
         fetchMinBytes: 1,
         fetchMaxBytes: 1024 * 1024,
         // Offset
-        fromOffset: false
+        fromOffset: false,
+        // custom options
+        mq_limit: 1000,
+        mq_interval: 50 //if null, then messages published immediately
     };
 }
 

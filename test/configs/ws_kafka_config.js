@@ -14,9 +14,7 @@ module.exports.kafka_config = {
     requestTimeout: 60000,
     autoConnect: true,
     //custom options
-    no_zookeeper_client: true,
-    mq_limit: 20000,
-    mq_interval: 200 //if null, then messages published immediately
+    no_zookeeper_client: true
 };
 
 module.exports.websocket_config ={
@@ -26,7 +24,10 @@ module.exports.websocket_config ={
 module.exports.producer_config = {
     requireAcks: 1,
     ackTimeoutMs: 100,
-    partitionerType: 2
+    partitionerType: 2,
+    // custom options
+    mq_limit: 20000,
+    mq_interval: 50 //if null, then messages published immediately
 };
 
 // module.exports.consumer_config ={
@@ -66,5 +67,8 @@ module.exports.consumer_config ={
     connectOnReady: true,
     migrateHLC: false,
     migrateRolling: true,
-    protocol: ['roundrobin']
+    protocol: ['roundrobin'],
+    // custom options
+    mq_limit: 5000,
+    mq_interval: 50 //if null, then messages published immediately
 };

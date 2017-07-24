@@ -1,4 +1,4 @@
-'use strict'
+'use strict';
 
 const WSKafka = require('../ws-kafka').WSKafkaConnector,
     debug = require('debug')('ws-kafka-test'),
@@ -18,12 +18,12 @@ function getWebSocketPort(){
 try {
 
     if (process.env.CONF_DIR) {
-        const p = path.format({dir: process.env.CONF_DIR,  base: 'ws_kafka_config' })
+        const p = path.format({dir: process.env.CONF_DIR,  base: 'ws_kafka_config' });
         conf_module = require(p);
-        console.log(`config loaded form ${p}`);
+        debug(`config loaded form ${p}`);
     }
 }catch(e){
-    console.log(`default config loaded`);
+    debug(`default config loaded`);
 
     conf_module.kafka_config = {
         //node-kafka options
@@ -50,44 +50,36 @@ try {
     };
 
     conf_module.consumer_config ={
+        // host: 'zookeeper:2181',  // zookeeper host omit if connecting directly to broker (see kafkaHost below)
+        kafkaHost: getBrokerList(),
+        ssl: true, // optional (defaults to false) or tls options hash
         groupId: 'kafka-node-group', //should be set by message to ws
-        // Auto commit config
         autoCommit: true,
-        autoCommitMsgCount: 100,
-        autoCommitIntervalMs: 5000,
+        autoCommitIntervalMs: 500,
         // Fetch message config
         fetchMaxWaitMs: 100,
+        paused: false,
+        maxNumSegments: 1000,
         fetchMinBytes: 1,
         fetchMaxBytes: 1024 * 1024,
-        // Offset
-        fromOffset: false,
+        maxTickMessages: 1000,
+        fromOffset: 'latest',
+        outOfRangeOffset: 'earliest',
+        sessionTimeout: 30000,
+        retries: 10,
+        retryFactor: 1.8,
+        retryMinTimeout: 1000,
+        connectOnReady: true,
+        migrateHLC: false,
+        migrateRolling: true,
+        protocol: ['roundrobin'],
         // custom options
-        mq_limit: 1000,
+        mq_limit: 5000,
         mq_interval: 50 //if null, then messages published immediately
     };
 }
 
-
-// Topics:
-// create topic message example:
-// {"id":23, "t":"topic","a":"create", "p":["t1", "t2", "t3", "t4"]}
-//
-// list topics:
-// {"id":157, "t":"topic","a":"list"}
-//
-// subscribe to topic:
-// {"id":1000,"t":"topic","a":"subscribe","p":{"t":["t1","t2"],"consumer_group":"ingestion_1"}}
-//
-// send notification. payload: t - topic, m - your message
-// {"id":5,"t":"notif","a":"create","p":{"t":"t2", "m":"hello"}}
-
-
-const wsk = new WSKafka(
-    conf_module.kafka_config,
-    conf_module.websocket_config,
-    conf_module.producer_config,
-    conf_module.consumer_config
-    );
+const wsk = new WSKafka(conf_module);
 
 wsk.on('ws-connection', (ws, req) => debug('connection'))
     .on('ws-close', () => debug('ws-close'))

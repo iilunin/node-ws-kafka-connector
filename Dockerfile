@@ -10,10 +10,11 @@ WORKDIR ${WORK_DIR}
 RUN apk add --no-cache --virtual .gyp \
         python \
         make \
-        g++ \
-        && npm install \
-        ws \
-        kafka-node
+        g++
+#         \
+#        && npm install \
+#        ws \
+#        kafka-node
 
 #RUN npm install pm2 -g
 

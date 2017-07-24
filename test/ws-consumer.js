@@ -12,13 +12,16 @@ process.on('uncaughtException', e => console.error(e))
 
 const ws = new WebSocket(process.env.WSS_URL || cfg.WSS_URL);
 
+let awg_counter = 0;
+let awg = 0;
 let counter = 0;
 let last_counter = 0;
 
 const mrate = setInterval(function () {
     let rate = counter - last_counter;
     if(rate > 0) {
-        console.log(`${rate} msgs/s`);
+        awg = Math.ceil((awg * awg_counter + rate) / ++awg_counter);
+        console.log(`processed ${counter} @${rate} msgs/s with average rate ${awg} msgs/s`);
         last_counter = counter;
     }
 }, 1000);
@@ -34,10 +37,12 @@ ws.on('open', () => {
        }
     }else{
         if(Array.isArray(msg)){
-            msg.forEach(m =>{
-                counter++;
-                handleMsg(m, counter);
-            });
+            counter += msg.length;
+            handleMsg(msg[0], counter, true);
+            // msg.forEach(m =>{
+            //     counter++;
+            //     handleMsg(m, counter);
+            // });
 
         }else {
             counter++;
@@ -48,8 +53,8 @@ ws.on('open', () => {
     }
 });
 
-function handleMsg(msg, counter){
-    if(counter % 1000 === 0){
+function handleMsg(msg, counter, skipCounter = false){
+    if(counter % 1000 === 0 || skipCounter){
         let lag = -1;
         if(msg.p){
             lag = new Date().getTime() - msg.p;

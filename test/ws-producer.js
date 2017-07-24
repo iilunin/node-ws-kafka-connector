@@ -4,10 +4,11 @@ const WebSocket = require('ws'),
 
 
 
-const MPS = cfg.MESSAGE_RATE || 10000;
+
+const MPS = process.env.MSG_RATE || (cfg.MESSAGE_RATE || 10000 );
 const TOTAL_MSGS = cfg.TOTAL_MESSAGES || 1000000;
 const TOPIC_COUNT = cfg.TOPICS_COUNT || 5;
-
+console.log(MPS);
 process.on('uncaughtException', e => console.error(e));
 
 function sleep(ms) {
